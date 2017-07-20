@@ -3,15 +3,15 @@ module Consumer
     ( runConsumer
     ) where
 
-import System.ZMQ4
-import Control.Monad (replicateM, forever)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Char8 as BSC
-import qualified Database.Persist.Postgresql as DB
+import           Control.Monad               (forever, replicateM)
 import           Data.Aeson
-import qualified Data.HashMap.Lazy as HM
-import qualified Data.Text as T
+import qualified Data.ByteString             as BS
+import qualified Data.ByteString.Char8       as BSC
+import qualified Data.ByteString.Lazy        as BSL
+import qualified Data.HashMap.Lazy           as HM
+import qualified Data.Text                   as T
+import qualified Database.Persist.Postgresql as DB
+import           System.ZMQ4
 
 import Model
 import Lib

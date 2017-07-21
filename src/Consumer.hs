@@ -61,4 +61,4 @@ runConsumer :: IO ()
 runConsumer = withDB $ \ pool -> 
     withContext $ connectSocket pool
                                 "tcp://hub.fedoraproject.org:9940"
-                                ["org.fedoraproject.pungi.compose.status.change"]
+                                ["org.fedoraproject.prod.pungi.compose.status.change"]

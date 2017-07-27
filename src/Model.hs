@@ -15,6 +15,7 @@ import           Control.Monad  (mzero)
 import           Data.Aeson
 import           Data.Text      (Text, pack, unpack)
 import           Data.Text.Lazy (toStrict)
+import           Data.Time
 
 import           Database.Persist.TH
 
@@ -23,6 +24,8 @@ Compose
     composeId  Text
     location    Text
     status      Text
+    createdOn   UTCTime         default=now()
+    modifiedOn  UTCTime         default=now()
     UniqueCompose composeId
     deriving Show
 |]

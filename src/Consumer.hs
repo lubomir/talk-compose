@@ -19,13 +19,13 @@ import Model
 import Lib
 
 type Topics = [BS.ByteString]
-type MessageHandler = (BS.ByteString -> IO ())
+type MessageHandler = (BS.ByteString -> BS.ByteString -> IO ())
 
 subscribeTopics :: Subscriber a => Topics -> Socket a -> IO ()
 subscribeTopics topics sock = mapM_ (subscribe sock) topics
 
 ingestMessages :: Receiver a => Socket a -> MessageHandler -> IO ()
-ingestMessages socket handler = forever $ receive socket >>= handler
+ingestMessages socket handler = forever $ handler <$> receive socket <*> receive socket
 
 asText :: Value -> Maybe T.Text
 asText (String t) = Just t
@@ -45,7 +45,8 @@ extractCompose now (Object body) = do
 extractCompose _ _ = Nothing
 
 consume :: DB.ConnectionPool -> MessageHandler
-consume pool msg = do
+consume pool topic msg = do
+    print ("Topic: " `BSC.append` topic)
     print ("Processing: " `BSC.append` msg)
     now <- getCurrentTime
     case decode (BSL.fromStrict msg) >>= extractCompose now of

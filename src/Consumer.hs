@@ -18,14 +18,18 @@ import           System.ZMQ4
 import Model
 import Lib
 
-type Topics = [BS.ByteString]
-type MessageHandler = (BS.ByteString -> IO ())
+type Topic = BS.ByteString
+type Msg = BS.ByteString
+type MessageHandler = (Topic -> Msg -> IO ())
 
-subscribeTopics :: Subscriber a => Topics -> Socket a -> IO ()
+subscribeTopics :: Subscriber a => [Topic] -> Socket a -> IO ()
 subscribeTopics topics sock = mapM_ (subscribe sock) topics
 
 ingestMessages :: Receiver a => Socket a -> MessageHandler -> IO ()
-ingestMessages socket handler = forever $ receive socket >>= handler
+ingestMessages socket handler = forever $ do
+    topic <- receive socket
+    msg <- receive socket
+    handler topic msg
 
 asText :: Value -> Maybe T.Text
 asText (String t) = Just t
@@ -45,15 +49,15 @@ extractCompose now (Object body) = do
 extractCompose _ _ = Nothing
 
 consume :: DB.ConnectionPool -> MessageHandler
-consume pool msg = do
+consume pool topic msg = do
     now <- getCurrentTime
     case decode (BSL.fromStrict msg) >>= extractCompose now of
-        Nothing -> BSC.putStrLn $ "Failed to process message: " `BSC.append` msg
+        Nothing -> BSC.putStrLn $ "Failed to process message from " `BSC.append` topic `BSC.append` ": " `BSC.append` msg
         Just compose ->
           void $ runDB pool $ DB.upsert compose [ ComposeStatus =. composeStatus compose
                                                 , ComposeModifiedOn =. now]
 
-connectSocket :: DB.ConnectionPool -> String -> Topics -> Context -> IO ()
+connectSocket :: DB.ConnectionPool -> String -> [Topic] -> Context -> IO ()
 connectSocket pool endpoint topics context = withSocket context Sub $ \subscriber -> do
     putStrLn $ "Connecting to " ++ endpoint
     connect subscriber endpoint

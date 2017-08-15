@@ -35,6 +35,8 @@ data Message = Message { msgTopic :: T.Text
                        , msgTimestamp :: UTCTime
                        , msgMsgId :: T.Text
                        , msgCrypto :: Crypto
+                       --, msgCert :: Maybe BSL.ByteString
+                       --, msgSignature :: Maybe BSL.ByteString
                        , msgI :: Int
                        , msgUsername :: T.Text
                        , msgMsg :: Value
@@ -46,10 +48,22 @@ instance FromJSON Message where
         <*> (posixSecondsToUTCTime . fromInteger <$> obj .: "timestamp")
         <*> obj .: "msg_id"
         <*> obj .: "crypto"
+        -- <*> obj .:? "certificate"
+        -- <*> obj .:? "signature"
         <*> obj .: "i"
         <*> obj .: "username"
         <*> obj .: "msg"
 
+validateX509 :: Message -> Bool
+validateX509 msg = True
+
+validateGPG :: Message -> Bool
+validateGPG msg = False
+
+validate :: Message -> Bool
+validate msg = case msgCrypto msg of
+    X509 -> validateX509 msg
+    GPG  -> validateGPG msg
 
 subscribeTopics :: Subscriber a => [Topic] -> Socket a -> IO ()
 subscribeTopics topics sock = mapM_ (subscribe sock) topics
@@ -57,10 +71,12 @@ subscribeTopics topics sock = mapM_ (subscribe sock) topics
 ingestMessages :: Receiver a => Socket a -> MessageHandler -> IO ()
 ingestMessages socket handler = forever $ do
     topic <- receive socket
-    msg <- receive socket
-    case eitherDecodeStrict msg of
+    rawmsg <- receive socket
+    case eitherDecodeStrict rawmsg of
         Left err -> putStrLn $ "Failed to decode message:" ++ err
-        Right msg' -> handler topic msg'
+        Right msg -> if validate msg
+                        then handler topic msg
+                        else putStrLn $ "Invalid signature: " ++ show msg
 
 asText :: Value -> Maybe T.Text
 asText (String t) = Just t

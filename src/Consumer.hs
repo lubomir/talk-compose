@@ -19,13 +19,13 @@ import Model
 import Lib
 
 type Topics = [BS.ByteString]
-type MessageHandler = (BS.ByteString -> BS.ByteString -> IO ())
+type MessageHandler = (BS.ByteString -> IO ())
 
 subscribeTopics :: Subscriber a => Topics -> Socket a -> IO ()
 subscribeTopics topics sock = mapM_ (subscribe sock) topics
 
 ingestMessages :: Receiver a => Socket a -> MessageHandler -> IO ()
-ingestMessages socket handler = forever $ handler <$> receive socket <*> receive socket
+ingestMessages socket handler = forever $ receive socket >>= handler
 
 asText :: Value -> Maybe T.Text
 asText (String t) = Just t
@@ -45,12 +45,10 @@ extractCompose now (Object body) = do
 extractCompose _ _ = Nothing
 
 consume :: DB.ConnectionPool -> MessageHandler
-consume pool topic msg = do
-    print ("Topic: " `BSC.append` topic)
-    print ("Processing: " `BSC.append` msg)
+consume pool msg = do
     now <- getCurrentTime
     case decode (BSL.fromStrict msg) >>= extractCompose now of
-        Nothing -> putStrLn "Failed to process message"
+        Nothing -> BSC.putStrLn $ "Failed to process message: " `BSC.append` msg
         Just compose ->
           void $ runDB pool $ DB.upsert compose [ ComposeStatus =. composeStatus compose
                                                 , ComposeModifiedOn =. now]
@@ -62,8 +60,21 @@ connectSocket pool endpoint topics context = withSocket context Sub $ \subscribe
     subscribeTopics topics subscriber
     ingestMessages subscriber (consume pool)
 
+runDB :: DB.ConnectionPool -> DB.SqlPersistT IO a -> IO a
+runDB pool q = DB.runSqlPool q pool
+
+withDB :: (DB.ConnectionPool -> IO a) -> IO a
+withDB worker = do
+    env <- getEnvironment
+    pool <- getPool env
+    runDB pool $ DB.runMigration migrateAll
+    worker pool
+
 runConsumer :: IO ()
-runConsumer = withDB $ \ pool ->
-    withContext $ connectSocket pool
-                                "tcp://hub.fedoraproject.org:9940"
-                                ["org.fedoraproject.prod.pungi.compose.status.change"]
+runConsumer = do
+    putStrLn "Connecting to database..."
+    withDB $ \ pool -> do
+        putStrLn "Connecting to ZMQ..."
+        withContext $ connectSocket pool
+                                    "tcp://hub.fedoraproject.org:9940"
+                                    ["org.fedoraproject.prod.pungi.compose.status.change"]

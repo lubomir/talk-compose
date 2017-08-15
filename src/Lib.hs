@@ -3,6 +3,7 @@ module Lib where
 
 
 import           Control.Monad.Logger        (runNoLoggingT, runStdoutLoggingT)
+import           Control.Monad.Reader        (MonadReader, ReaderT (..), asks)
 import qualified Data.ByteString.Char8       as BS8
 import qualified Data.Text                   as T
 import           Data.Text.Encoding          (encodeUtf8)
@@ -58,13 +59,3 @@ getPool e = do
         Development -> runStdoutLoggingT (DB.createPostgresqlPool s n)
         Production -> runStdoutLoggingT (DB.createPostgresqlPool s n)
         Test -> runNoLoggingT (DB.createPostgresqlPool s n)
-
-runDB :: DB.ConnectionPool -> DB.SqlPersistT IO a -> IO a
-runDB pool q = DB.runSqlPool q pool
-
-withDB :: (DB.ConnectionPool -> IO a) -> IO a
-withDB worker = do
-    env <- getEnvironment
-    pool <- getPool env
-    runDB pool $ DB.runMigration migrateAll
-    worker pool

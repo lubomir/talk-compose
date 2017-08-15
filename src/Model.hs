@@ -7,6 +7,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Model where
@@ -30,3 +31,10 @@ Compose
     deriving Show
 |]
 
+composeDuration :: Compose -> Text
+composeDuration Compose{..}
+    | composeCreatedOn == composeModifiedOn = ""
+    | otherwise = pack $ show $ diffUTCTime composeModifiedOn composeCreatedOn
+
+fmtTime :: UTCTime -> Text
+fmtTime = pack . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S"

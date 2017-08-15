@@ -1,0 +1,11 @@
+$doctype 5
+<html>
+    <head>
+        <meta charset=utf-8>
+        <link rel=stylesheet href="/static/style.css">
+    <body>
+        <div class="content">
+            $forall (DB.Entity _ c) <- composes
+                <a href="/#{composeComposeId c}" class=compose class=#{composeStatus c}>
+                    <span class=composeID>#{composeComposeId c}
+                    <span class=status>#{composeStatus c}

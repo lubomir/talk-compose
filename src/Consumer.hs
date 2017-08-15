@@ -11,6 +11,7 @@ import qualified Data.ByteString.Lazy        as BSL
 import qualified Data.HashMap.Lazy           as HM
 import qualified Data.Text                   as T
 import           Data.Time
+import           Data.Time.Clock.POSIX
 import           Database.Persist            ((=.))
 import qualified Database.Persist.Postgresql as DB
 import           System.ZMQ4
@@ -19,8 +20,36 @@ import Model
 import Lib
 
 type Topic = BS.ByteString
-type Msg = BS.ByteString
-type MessageHandler = (Topic -> Msg -> IO ())
+type RawMsg = BS.ByteString
+type MessageHandler = (Topic -> Message -> IO ())
+
+data Crypto = X509 | GPG deriving (Show, Eq)
+
+instance FromJSON Crypto where
+    parseJSON = withText "String" $ \txt -> case txt of
+        "x509" -> return X509
+        "gpg" -> return GPG
+        _ -> fail "Unknown crypto type"
+
+data Message = Message { msgTopic :: T.Text
+                       , msgTimestamp :: UTCTime
+                       , msgMsgId :: T.Text
+                       , msgCrypto :: Crypto
+                       , msgI :: Int
+                       , msgUsername :: T.Text
+                       , msgMsg :: Value
+                       } deriving (Show, Eq)
+
+instance FromJSON Message where
+    parseJSON = withObject "Object" $ \obj -> Message
+        <$> obj .: "topic"
+        <*> (posixSecondsToUTCTime . fromInteger <$> obj .: "timestamp")
+        <*> obj .: "msg_id"
+        <*> obj .: "crypto"
+        <*> obj .: "i"
+        <*> obj .: "username"
+        <*> obj .: "msg"
+
 
 subscribeTopics :: Subscriber a => [Topic] -> Socket a -> IO ()
 subscribeTopics topics sock = mapM_ (subscribe sock) topics
@@ -29,7 +58,9 @@ ingestMessages :: Receiver a => Socket a -> MessageHandler -> IO ()
 ingestMessages socket handler = forever $ do
     topic <- receive socket
     msg <- receive socket
-    handler topic msg
+    case eitherDecodeStrict msg of
+        Left err -> putStrLn $ "Failed to decode message:" ++ err
+        Right msg' -> handler topic msg'
 
 asText :: Value -> Maybe T.Text
 asText (String t) = Just t
@@ -51,8 +82,8 @@ extractCompose _ _ = Nothing
 consume :: DB.ConnectionPool -> MessageHandler
 consume pool topic msg = do
     now <- getCurrentTime
-    case decode (BSL.fromStrict msg) >>= extractCompose now of
-        Nothing -> BSC.putStrLn $ "Failed to process message from " `BSC.append` topic `BSC.append` ": " `BSC.append` msg
+    case extractCompose now (msgMsg msg) of
+        Nothing -> putStrLn $ "Failed to process message: " ++ show msg
         Just compose ->
           void $ runDB pool $ DB.upsert compose [ ComposeStatus =. composeStatus compose
                                                 , ComposeModifiedOn =. now]

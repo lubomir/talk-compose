@@ -54,6 +54,8 @@ instance FromJSON Message where
         <*> obj .: "username"
         <*> obj .: "msg"
 
+-- TODO
+--  * download certificate to a known location
 validateX509 :: Message -> Bool
 validateX509 msg = True
 

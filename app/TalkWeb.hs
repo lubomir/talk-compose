@@ -55,6 +55,7 @@ composePage Compose{..} = do
 main :: IO ()
 main = runService $ do
     get "/" $ do
+        -- TODO: select only X latest composes for a release
         composes <- runDB $ DB.selectList [] [DB.Desc ComposeComposeId]
         template $ mconcat
                  $ map (composeRow . unzip)

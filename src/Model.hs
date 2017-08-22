@@ -20,6 +20,7 @@ import           Data.Time
 
 import           Database.Persist.TH
 
+-- TODO: parse compose ID before storing in database
 share [mkMigrate "migrateAll", mkPersist sqlSettings] [persistLowerCase|
 Compose
     composeId  Text

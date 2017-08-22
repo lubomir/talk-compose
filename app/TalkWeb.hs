@@ -30,6 +30,7 @@ composeBox c =
     a_ [href_ (composeComposeId c), class_ " compose ", class_ (composeStatus c)] $ do
         span_ [class_ "composeId"] (toHtml $ composeComposeId c)
         span_ [class_ "status"] (toHtml $ composeStatus c)
+        span_ [class_ "duration"] (toHtml $ composeDuration c)
 
 composeRow :: ([Text], [Compose]) -> Html ()
 composeRow (release:_, composes) = do

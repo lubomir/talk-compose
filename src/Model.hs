@@ -14,9 +14,11 @@ module Model where
 
 import           Control.Monad  (mzero)
 import           Data.Aeson
+import           Data.List      (intercalate)
 import           Data.Text      (Text, pack, unpack)
 import           Data.Text.Lazy (toStrict)
 import           Data.Time
+import           Text.Printf
 
 import           Database.Persist.TH
 
@@ -35,7 +37,18 @@ Compose
 composeDuration :: Compose -> Text
 composeDuration Compose{..}
     | composeCreatedOn == composeModifiedOn = ""
-    | otherwise = pack $ show $ diffUTCTime composeModifiedOn composeCreatedOn
+    | otherwise = pack $ fmtDuration (diffUTCTime composeModifiedOn composeCreatedOn)
+
+fmtDuration :: NominalDiffTime -> String
+fmtDuration duration =
+    intercalate ":" $ map (printf "%02d") values
+  where
+    total :: Integer
+    total = round (realToFrac duration :: Double)
+    values = [ total `div` 3600
+             , (total `div` 60) `mod` 60
+             , total `mod` 60
+             ]
 
 fmtTime :: UTCTime -> Text
 fmtTime = pack . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S"

@@ -1,0 +1,26 @@
+sudo: required
+services:
+- docker
+cache:
+  directories:
+  - "$HOME/.stack"
+before_install:
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- if [ ! -x ~/.local/bin/stack ]; then travis_retry curl -L https://www.stackage.org/stack/linux-x86_64
+  | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack' && chmod +x
+  ~/.local/bin/stack; fi
+script:
+- stack docker pull
+- stack --no-terminal build --docker --install-ghc
+before_deploy:
+- cp -v .stack-work/install/*/*/*/bin/talk-compose-* .
+- tar cvf build.tar.xz static/ talk-compose-web talk-compose-consumer
+deploy:
+  provider: releases
+  api_key:
+    secure: LkM5PpdSDGPrYeN5UnLNv1jhd/ERSyngwp53C0K1g/eoL6eaRUDlVXw+/lIg+Chn0mqTfehUlEoMMficalp0iJByq3Su79AYwCx+wp27o9b/L4pneQo36kdJtLUJhQDCIBLdMNKaotjC2CUlJKyISQQ7IOP331npW9MXOpc1kWJT+rRWGZ2okLzUGfQ8ef7iiyzWG5RuJjQHk9P7t2TC+5/Xa/H5RgsB1l5My9eJ54MTwuCvMGrarUhc895idxEFnNp4Ejz+75okD0Kjw+byTtipDZiS3WiqoOI5Gj+jb2Lv73VmpCniUjyRKA/5BmW3xZTgvF0RWf5aGlyagBtz5r7xWlhAjzIoTOXKHbk+D5x5aYdguXSvv7fYOMdHwf5cbOz97ITUtnv0qkBZp6Y6AR6vq7Gj8Pajq3a1u9RFifEmdwm3a5kYk6iBzORSTPr9LsT+iebGr/UHeg5fJUzGKal4UQvzT5XqMlnLYnBOgO+4UrzWA4kt6216/Oy23vboFdCqBgJT8wzMOVsRFJQeEZMKUe0eagetF8/DNKTFsGxXtAGKmVA6dulxKNkKAEwyP40BXro56bDSWuAzPVPzy8FQq/Wme/3FVEks4pAcn8aK/77Dmtk45MnH0YiNWGqa3BT3HrHfYEeRNbzwuesG2NGupZMG+oIhZR6VHVlwW3Y=
+  file: build.tar.xz
+  on:
+    repo: lubomir/talk-compose
+    tags: true

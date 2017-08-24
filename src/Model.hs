@@ -16,18 +16,21 @@ import           Control.Monad  (mzero)
 import           Data.Aeson
 import           Data.List      (intercalate)
 import           Data.Text      (Text, pack, unpack)
-import           Data.Text.Lazy (toStrict)
+import qualified Data.Text as T
 import           Data.Time
 import           Text.Printf
 
 import           Database.Persist.TH
 
--- TODO: parse compose ID before storing in database
 share [mkMigrate "migrateAll", mkPersist sqlSettings] [persistLowerCase|
 Compose
     composeId  Text
     location    Text
     status      Text
+    release     Text
+    version     Text
+    date        Text
+    respin      Int
     createdOn   UTCTime         default=now()
     modifiedOn  UTCTime         default=now()
     UniqueCompose composeId
@@ -52,3 +55,13 @@ fmtDuration duration =
 
 fmtTime :: UTCTime -> Text
 fmtTime = pack . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S"
+
+parseComposeId :: Text -> (Text, Text, Text, Int)
+parseComposeId cid = case T.splitOn "-" (T.reverse cid) of
+    (dr:version:release') ->
+        let release = T.reverse (T.intercalate "-" release')
+            (r', d') = T.breakOn "." dr
+            date = T.init (T.reverse d')
+            respin = read $ unpack $ T.reverse r'
+        in (release, T.reverse version, date, respin)
+    _ -> ("", "", "", 0)

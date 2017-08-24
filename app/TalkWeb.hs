@@ -69,7 +69,13 @@ main = runService $ do
         -- Select only composes updated in the last 10 days.
         let diff = -10 * 24 * 3600
         offset <- addUTCTime diff <$> liftIO getCurrentTime
-        composes <- runDB $ DB.selectList [ComposeModifiedOn DB.>. offset] [DB.Desc ComposeComposeId]
+        composes <- runDB $ DB.selectList [ComposeModifiedOn DB.>. offset]
+                                          [ DB.Asc ComposeRelease
+                                          , DB.Desc ComposeVersion
+                                          , DB.Desc ComposeDate
+                                          , DB.Asc ComposeType
+                                          , DB.Desc ComposeRespin
+                                          ]
         template $ mconcat
                  $ map (composeRow . unzip)
                  $ groupBy (\x y -> fst x == fst y)

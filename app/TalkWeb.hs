@@ -25,16 +25,25 @@ template content = do
     setHeader "Content-Type" "text/html"
     text . renderText . defaultTemplate $ content
 
+formatType :: Compose -> Html ()
+formatType Compose{..}
+    | composeType == "" = ""
+    | otherwise = "." <> toHtml composeType
+
 composeBox :: Compose -> Html ()
 composeBox c =
     a_ [href_ (composeComposeId c), class_ " compose ", class_ (composeStatus c)] $ do
-        span_ [class_ "composeId"] (toHtml $ composeComposeId c)
+        span_ [class_ "composeId"] $ do
+            toHtml (composeDate c )
+            formatType c
+            "."
+            toHtml (show $ composeRespin c)
         span_ [class_ "status"] (toHtml $ composeStatus c)
         span_ [class_ "duration"] (toHtml $ composeDuration c)
 
-composeRow :: ([Text], [Compose]) -> Html ()
-composeRow (release:_, composes) = do
-    h2_ $ toHtml release
+composeRow :: ([(Text, Text)], [Compose]) -> Html ()
+composeRow ((release, version):_, composes) = do
+    h2_ $ toHtml release <> " " <> toHtml version
     div_ [class_ "row"] $ mconcat $ map composeBox composes
 
 
@@ -61,7 +70,7 @@ main = runService $ do
         template $ mconcat
                  $ map (composeRow . unzip)
                  $ groupBy (\x y -> fst x == fst y)
-                 $ map ((\x -> (getRelease x, x)) . DB.entityVal) composes
+                 $ map ((\x -> ((composeRelease x, composeVersion x), x)) . DB.entityVal) composes
 
     get "/:id" $ do
         cid <- param "id"

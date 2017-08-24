@@ -84,13 +84,8 @@ asText :: Value -> Maybe T.Text
 asText (String t) = Just t
 asText _ = Nothing
 
-asObject :: Value -> Maybe (HM.HashMap T.Text Value)
-asObject (Object obj) = Just obj
-asObject _ = Nothing
-
 extractCompose :: UTCTime -> Value -> Maybe Compose
-extractCompose now (Object body) = do
-    msg <- HM.lookup "msg" body >>= asObject
+extractCompose now (Object msg) = do
     composeId <- HM.lookup "compose_id" msg >>= asText
     location <- HM.lookup "location" msg >>= asText
     status <- HM.lookup "status" msg >>= asText

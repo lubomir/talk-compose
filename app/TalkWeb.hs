@@ -6,6 +6,7 @@ import           Data.List
 import           Data.Monoid                 ((<>))
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
+import           Data.Time
 import qualified Database.Persist.Postgresql as DB
 import           Lucid
 import           Web.Scotty.Trans
@@ -65,8 +66,10 @@ composePage Compose{..} = do
 main :: IO ()
 main = runService $ do
     get "/" $ do
-        -- TODO: select only X latest composes for a release
-        composes <- runDB $ DB.selectList [] [DB.Desc ComposeComposeId]
+        -- Select only composes updated in the last 10 days.
+        let diff = -10 * 24 * 3600
+        offset <- addUTCTime diff <$> liftIO getCurrentTime
+        composes <- runDB $ DB.selectList [ComposeModifiedOn DB.>. offset] [DB.Desc ComposeComposeId]
         template $ mconcat
                  $ map (composeRow . unzip)
                  $ groupBy (\x y -> fst x == fst y)

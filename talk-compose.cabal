@@ -58,6 +58,7 @@ executable talk-compose-web
                      , persistent
                      , lucid
                      , text
+                     , time
   default-language:    Haskell2010
 
 test-suite talk-compose-test

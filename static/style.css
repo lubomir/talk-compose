@@ -8,8 +8,8 @@
     color: #000;
     text-decoration: none;
     display: inline-block;
-    width: 306px;
-    text-align: center;
+    width: 180px;
+    text-align: left;
     padding: 6px;
     margin: 6px;
     border: 2px solid;
@@ -17,6 +17,14 @@
 }
 .compose span {
     display: block;
+}
+
+.status {
+    font-size: 200%;
+    float: left;
+    margin: 0 6px;
+    min-width: 25px;
+    text-align: center;
 }
 
 .row {
@@ -27,12 +35,24 @@
 .DOOMED {
     border-color: red;
 }
+.DOOMED .status {
+    color: red;
+}
 .STARTED {
     border-color: blue;
+}
+.STARTED .status {
+    color: blue;
 }
 .FINISHED {
     border-color: #339900;
 }
+.FINISHED .status {
+    color: #339900;
+}
 .FINISHED_INCOMPLETE {
     border-color: #99cc33;
+}
+.FINISHED_INCOMPLETE .status {
+    color: #99cc33;
 }

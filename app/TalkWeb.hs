@@ -31,15 +31,26 @@ formatType Compose{..}
     | composeType == "" = ""
     | otherwise = "." <> toHtml composeType
 
+
+formatStatus :: Compose -> Html ()
+formatStatus Compose{..} =
+    span_ [class_ "status", title_ composeStatus] text
+  where
+    text = case composeStatus of
+            "FINISHED"            -> "✔"
+            "FINISHED_INCOMPLETE" -> "✅"
+            "DOOMED"              -> "✘"
+            _                     -> "..."
+
 composeBox :: Compose -> Html ()
 composeBox c =
     a_ [href_ (composeComposeId c), class_ " compose ", class_ (composeStatus c)] $ do
+        formatStatus c
         span_ [class_ "composeId"] $ do
             toHtml (composeDate c )
             formatType c
             "."
             toHtml (show $ composeRespin c)
-        span_ [class_ "status"] (toHtml $ composeStatus c)
         span_ [class_ "duration"] (toHtml $ composeDuration c)
 
 composeRow :: ([(Text, Text)], [Compose]) -> Html ()

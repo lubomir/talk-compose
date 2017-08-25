@@ -39,9 +39,8 @@ Compose
 |]
 
 composeDuration :: Compose -> Text
-composeDuration Compose{..}
-    | composeCreatedOn == composeModifiedOn = ""
-    | otherwise = pack $ fmtDuration (diffUTCTime composeModifiedOn composeCreatedOn)
+composeDuration Compose{..} =
+    pack $ fmtDuration (diffUTCTime composeModifiedOn composeCreatedOn)
 
 fmtDuration :: NominalDiffTime -> String
 fmtDuration duration =

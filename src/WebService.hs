@@ -3,17 +3,23 @@
 {-# LANGUAGE RecordWildCards #-}
 module WebService where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Reader (MonadReader, ReaderT(..), asks)
-import Control.Monad.Trans.Class (MonadTrans, lift)
-import Network.Wai.Middleware.RequestLogger (logStdout, logStdoutDev)
-import qualified Database.Persist.Postgresql as DB
-import Data.Text.Lazy (Text)
-import Web.Scotty.Trans (ActionT, Options(..), ScottyT, scottyOptsT, middleware)
-import Network.Wai.Handler.Warp (Settings, defaultSettings, setFdCacheDuration, setPort)
-import           System.Environment          (lookupEnv)
-import Data.Default.Class
-import Network.Wai (Middleware)
+import           Control.Monad.IO.Class               (MonadIO, liftIO)
+import           Control.Monad.Reader                 (MonadReader,
+                                                       ReaderT (..), asks)
+import           Control.Monad.Trans.Class            (MonadTrans, lift)
+import           Data.Default.Class
+import           Data.Text.Lazy                       (Text)
+import qualified Database.Persist.Postgresql          as DB
+import           Network.Wai                          (Middleware)
+import           Network.Wai.Handler.Warp             (Settings,
+                                                       defaultSettings,
+                                                       setFdCacheDuration,
+                                                       setPort)
+import           Network.Wai.Middleware.RequestLogger (logStdout, logStdoutDev)
+import           System.Environment                   (lookupEnv)
+import           Web.Scotty.Trans                     (ActionT, Options (..),
+                                                       ScottyT, middleware,
+                                                       scottyOptsT)
 
 import Model
 import Lib

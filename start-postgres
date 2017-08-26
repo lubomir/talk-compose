@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e
+
+docker run --rm -ti -e POSTGRES_DB=talk_compose_development -p 5432:5432 postgres

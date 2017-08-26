@@ -13,13 +13,15 @@ import           Data.Time
 import           Data.Time.Clock.POSIX
 import           Database.Persist            ((=.))
 import qualified Database.Persist.Postgresql as DB
-import           System.ZMQ4
+import           System.ZMQ4                 (Context, Receiver, Socket, Sub(..),
+                                              Subscriber, connect, receive,
+                                              subscribe, withContext,
+                                              withSocket)
 
 import Model
 import Lib
 
 type Topic = BS.ByteString
-type RawMsg = BS.ByteString
 type MessageHandler = (Topic -> Message -> IO ())
 
 data Crypto = X509 | GPG deriving (Show, Eq)
@@ -93,7 +95,7 @@ extractCompose now (Object msg) = do
 extractCompose _ _ = Nothing
 
 consume :: DB.ConnectionPool -> MessageHandler
-consume pool topic msg = do
+consume pool _ msg = do
     now <- getCurrentTime
     case extractCompose now (msgMsg msg) of
         Nothing -> putStrLn $ "Failed to process message: " ++ show msg

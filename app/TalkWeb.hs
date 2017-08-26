@@ -7,6 +7,7 @@ import           Data.Monoid                 ((<>))
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Data.Time
+import           Data.Version                (showVersion)
 import qualified Database.Persist.Postgresql as DB
 import           Lucid
 import           Web.Scotty.Trans
@@ -14,12 +15,21 @@ import           Web.Scotty.Trans
 import Model
 import WebService
 
-defaultTemplate :: Html a -> Html a
+import           Paths_talk_compose (version)
+
+defaultTemplate :: Html a -> Html ()
 defaultTemplate content = doctypehtml_ $ do
     head_ $ do
         meta_ [charset_ "utf-8"]
         link_ [href_ "/static/style.css", rel_ "stylesheet"]
-    body_ $ div_ [class_ "content"] content
+        title_ "Talk Compose"
+    body_ $ do
+        div_ [class_ "content"] content
+        div_ [class_ "footer"] $
+            span_ [class_ "version"] $
+                a_ [href_ "https://github.com/lubomir/talk-compose"] $ do
+                    "Talk Compose "
+                    toHtml $ showVersion version
 
 template :: Html a -> Action
 template content = do

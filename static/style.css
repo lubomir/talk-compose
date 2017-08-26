@@ -56,3 +56,8 @@
 .FINISHED_INCOMPLETE .status {
     color: #99cc33;
 }
+
+.footer {
+    margin-top: 50px;
+    text-align: center;
+}

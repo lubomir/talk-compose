@@ -75,8 +75,8 @@ getRelease Compose{..} =
     in T.dropEnd 1 prefix
 
 composePage :: Compose -> Html ()
-composePage Compose{..} = do
-    h1_ $ toHtml composeComposeId
+composePage c@Compose{..} = do
+    h1_ [class_ composeStatus] $ toHtml composeComposeId <> formatStatus c
     ul_ $ do
         li_ $ a_ [href_ composeLocation] "View"
         li_ $ "First heard of: " <> toHtml (fmtTime composeCreatedOn)

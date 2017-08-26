@@ -22,13 +22,14 @@ body {
 .compose span {
     display: block;
 }
-
 .status {
-    font-size: 200%;
     float: left;
     margin: 0 6px;
     min-width: 25px;
     text-align: center;
+}
+.compose .status {
+    font-size: 200%;
 }
 
 .row {

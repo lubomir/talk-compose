@@ -78,7 +78,8 @@ composePage :: Compose -> Html ()
 composePage c@Compose{..} = do
     h1_ [class_ composeStatus] $ toHtml composeComposeId <> formatStatus c
     ul_ $ do
-        li_ $ a_ [href_ composeLocation] "View"
+        li_ $ a_ [href_ composeLocation] "View data"
+        li_ $ a_ [href_ $ composeLocation <> "/../logs/global/pungi.global.log"] "View main log"
         li_ $ "First heard of: " <> toHtml (fmtTime composeCreatedOn)
         li_ $ "Last heard of: " <> toHtml (fmtTime composeModifiedOn)
     h2_ "Comments"

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+pos=3
+if [ $# -eq 1 ] && [ "$1" = "--major" ]; then
+    pos=2
+fi
+cmd=$(printf '{$%s=$%s+1} 1' "$pos" "$pos")
+
+version=$(grep '^version' talk-compose.cabal | awk '{print $2}')
+new_version=$(echo "$version" | awk -F. "$cmd" OFS=.)
+
+echo "Current version: $version"
+echo "Bumping to:      $new_version"
+read -p "Is this ok? " -n 1 -r
+
+if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
+    echo ""
+    exit 1
+fi
+echo ""
+
+msg="Release $new_version
+
+$(git log --no-merges --pretty=tformat:" * %s" "$version..")"
+
+sed -i "s/^\(version: *\)$version$/\1$new_version/" talk-compose.cabal
+
+git add talk-compose.cabal
+git commit -q -m "$msg"
+
+git tag "$new_version"

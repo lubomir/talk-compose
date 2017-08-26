@@ -3,15 +3,11 @@ module Lib where
 
 
 import           Control.Monad.Logger        (runNoLoggingT, runStdoutLoggingT)
-import           Control.Monad.Reader        (MonadReader, ReaderT (..), asks)
 import qualified Data.ByteString.Char8       as BS8
 import qualified Data.Text                   as T
 import           Data.Text.Encoding          (encodeUtf8)
 import qualified Database.Persist.Postgresql as DB
 import           System.Environment          (lookupEnv)
-
-
-import Model
 
 
 data Environment = Production

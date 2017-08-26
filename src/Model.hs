@@ -12,8 +12,6 @@
 
 module Model where
 
-import           Control.Monad  (mzero)
-import           Data.Aeson
 import           Data.List      (intercalate)
 import           Data.Text      (Text, pack, unpack)
 import qualified Data.Text as T

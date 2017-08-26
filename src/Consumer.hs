@@ -3,11 +3,10 @@ module Consumer
     ( runConsumer
     ) where
 
-import           Control.Monad               (forever, replicateM, void)
+import           Control.Monad               (forever, void)
 import           Data.Aeson
 import qualified Data.ByteString             as BS
-import qualified Data.ByteString.Char8       as BSC
-import qualified Data.ByteString.Lazy        as BSL
+-- import qualified Data.ByteString.Lazy        as BSL
 import qualified Data.HashMap.Lazy           as HM
 import qualified Data.Text                   as T
 import           Data.Time

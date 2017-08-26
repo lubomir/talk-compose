@@ -8,7 +8,6 @@ import Control.Monad.Reader (MonadReader, ReaderT(..), asks)
 import Control.Monad.Trans.Class (MonadTrans, lift)
 import Network.Wai.Middleware.RequestLogger (logStdout, logStdoutDev)
 import qualified Database.Persist.Postgresql as DB
-import qualified Data.Text as T
 import Data.Text.Lazy (Text)
 import Web.Scotty.Trans (ActionT, Options(..), ScottyT, scottyOptsT, middleware)
 import Network.Wai.Handler.Warp (Settings, defaultSettings, setFdCacheDuration, setPort)

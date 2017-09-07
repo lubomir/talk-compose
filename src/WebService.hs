@@ -1,12 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 module WebService where
 
+import           Control.Monad.Base
 import           Control.Monad.IO.Class               (MonadIO, liftIO)
 import           Control.Monad.Reader                 (MonadReader,
                                                        ReaderT (..), asks)
 import           Control.Monad.Trans.Class            (MonadTrans, lift)
+import           Control.Monad.Trans.Control
+import           Control.Monad.Trans.Resource
 import           Data.Default.Class
 import           Data.Text.Lazy                       (Text)
 import qualified Database.Persist.Postgresql          as DB
@@ -29,7 +34,14 @@ data Config = Config { environment :: Environment
                      }
 
 newtype ConfigM a = ConfigM { runConfigM :: ReaderT Config IO a }
-                  deriving (Applicative, Functor, Monad, MonadIO, MonadReader Config)
+                  deriving (Applicative, Functor, Monad, MonadIO, MonadReader Config, MonadBase IO, MonadThrow)
+
+instance MonadBaseControl IO ConfigM where
+    type StM ConfigM a = a
+    -- TODO is this needed?
+
+instance MonadResource ConfigM where
+    -- TODO is this needed?
 
 type Error = Text
 

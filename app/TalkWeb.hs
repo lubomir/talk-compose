@@ -35,7 +35,6 @@ defaultTemplate content = doctypehtml_ $ do
         title_ "Talk Compose"
     body_ $ do
         div_ [class_ "content"] content
-        -- TODO put the foo to the bottom of page
         div_ [class_ "footer"] $
             span_ [class_ "version"] $
                 a_ [href_ "https://github.com/lubomir/talk-compose"] $ do

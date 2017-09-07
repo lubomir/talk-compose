@@ -2,8 +2,13 @@
     box-sizing: border-box;
 }
 
+html {
+    position: relative;
+    min-height: 100%;
+}
 body {
     font-family: sans-serif;
+    margin-bottom: 100px;
 }
 
 .content {
@@ -63,6 +68,12 @@ body {
 }
 
 .footer {
-    margin-top: 50px;
     text-align: center;
+    height: 80px;
+    line-height: 80px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden;
 }

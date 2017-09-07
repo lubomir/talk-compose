@@ -6,7 +6,11 @@ pos=3
 if [ $# -eq 1 ] && [ "$1" = "--major" ]; then
     pos=2
 fi
-cmd=$(printf '{$%s=$%s+1} 1' "$pos" "$pos")
+cmd=$(printf '{$%s=$%s+1' "$pos" "$pos")
+for i in $(seq $((pos + 1)) 4); do
+    cmd=$(printf "%s;$%s=0" "$cmd" "$i")
+done
+cmd="$cmd} 1"
 
 version=$(grep '^version' talk-compose.cabal | awk '{print $2}')
 new_version=$(echo "$version" | awk -F. "$cmd" OFS=.)
@@ -19,7 +23,7 @@ if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
     echo ""
     exit 1
 fi
-echo ""
+echo -e "\nContinuing..."
 
 msg="Release $new_version
 

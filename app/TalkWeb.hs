@@ -35,6 +35,7 @@ defaultTemplate content = doctypehtml_ $ do
         title_ "Talk Compose"
     body_ $ do
         div_ [class_ "content"] content
+        -- TODO put the foo to the bottom of page
         div_ [class_ "footer"] $
             span_ [class_ "version"] $
                 a_ [href_ "https://github.com/lubomir/talk-compose"] $ do
@@ -145,6 +146,7 @@ main = do
                         request <- parseRequest $ T.unpack url
                         response <- httpLbs request manager
                         return $ T.strip $ decodeUtf8 $ LBS.toStrict $ responseBody response
+                    -- TODO get time from Last-Modified header
                     now <- liftIO getCurrentTime
                     runDB $ DB.upsert compose [ ComposeStatus DB.=. status
                                               , ComposeModifiedOn DB.=. now]

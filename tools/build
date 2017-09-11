@@ -4,4 +4,4 @@ set -e
 
 here=$(dirname "$0")
 
-stack build --file-watch "$@" --exec "$here/start-restart-server"
+stack build --file-watch --fast "$@" --exec "$here/start-restart-server"

@@ -20,6 +20,8 @@ import           Lucid
 import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS
 import           Web.Authenticate.OpenId
+import qualified Web.JWT                     as JWT
+import           Web.Scotty.Cookie
 import           Web.Scotty.Trans
 
 import Model
@@ -27,13 +29,16 @@ import WebService
 
 import           Paths_talk_compose (version)
 
-defaultTemplate :: Html a -> Html ()
-defaultTemplate content = doctypehtml_ $ do
+defaultTemplate :: Maybe JWT.StringOrURI -> Html a -> Html ()
+defaultTemplate muser content = doctypehtml_ $ do
     head_ $ do
         meta_ [charset_ "utf-8"]
         link_ [href_ "/static/style.css", rel_ "stylesheet"]
         title_ "Talk Compose"
     body_ $ do
+        div_ [class_ "header"] $ do
+            h1_ (a_ [href_ "/"] "Talk Compose")
+            div_ [class_ "user"] (userBlock muser)
         div_ [class_ "content"] content
         div_ [class_ "footer"] $
             span_ [class_ "version"] $
@@ -41,10 +46,17 @@ defaultTemplate content = doctypehtml_ $ do
                     "Talk Compose "
                     toHtml $ showVersion version
 
+userBlock :: Maybe JWT.StringOrURI -> Html ()
+userBlock Nothing = a_ [href_ "/login"] "Log in"
+userBlock (Just user) = do
+    strong_ (toHtml (show user))
+    a_ [href_ "/logout"] "Log out"
+
 template :: Html a -> Action
 template content = do
     setHeader "Content-Type" "text/html"
-    text . renderText . defaultTemplate $ content
+    muser <- optionalUser
+    text . renderText . defaultTemplate muser $ content
 
 formatType :: Compose -> Html ()
 formatType Compose{..}
@@ -86,7 +98,7 @@ getRelease Compose{..} =
 
 composePage :: Compose -> Html ()
 composePage c@Compose{..} = do
-    h1_ [class_ composeStatus] $ toHtml composeComposeId <> formatStatus c
+    h2_ [class_ composeStatus] $ toHtml composeComposeId <> formatStatus c
     ul_ $ do
         when (composeStatus == "STARTED") $
             li_ $ a_ [href_ $ "/refresh/" <> composeComposeId] "Refresh status"
@@ -100,6 +112,7 @@ composePage c@Compose{..} = do
 main :: IO ()
 main = do
     manager <- newManager tlsManagerSettings
+    secret <- getSecret
     runService $ do
         get "/" $ do
             -- Select only composes updated in the last 10 days.
@@ -131,7 +144,18 @@ main = do
             res <- lift $ authenticateClaimed ps manager
             case lookup "openid.sreg.nickname" ps of
                 Nothing -> liftIO $ print "No nickname"
-                Just nickname -> liftIO $ print nickname
+                Just nickname -> do
+                    let token = JWT.encodeSigned JWT.HS256 secret JWT.def
+                                             { JWT.iss = JWT.stringOrURI "http://localhost:3000/"
+                                             , JWT.sub = JWT.stringOrURI nickname
+                                             , JWT.exp = JWT.numericDate 7200
+                                             }
+                    setSimpleCookie loginCookie token
+                    redirect "/"
+
+        get "/logout" $ do
+            deleteCookie loginCookie
+            redirect "/"
 
         get "/refresh/:id" $ do
             cid <- param "id"

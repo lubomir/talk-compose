@@ -120,8 +120,8 @@ main = do
             let diff = -10 * 24 * 3600
             offset <- addUTCTime diff <$> liftIO getCurrentTime
             composes <- runDB $ DB.selectList [ComposeModifiedOn DB.>. offset]
-                                              [ DB.Asc ComposeRelease
-                                              , DB.Desc ComposeVersion
+                                              [ DB.Desc ComposeVersion
+                                              , DB.Asc ComposeRelease
                                               , DB.Desc ComposeDate
                                               , DB.Asc ComposeType
                                               , DB.Desc ComposeRespin

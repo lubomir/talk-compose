@@ -15,6 +15,7 @@ import           Control.Monad.Trans.Resource
 import qualified Data.ByteString.Char8                as BS
 import           Data.Default.Class
 import qualified Data.Text                            as T
+import           Data.Text.Encoding                   (decodeUtf8)
 import           Data.Text.Lazy                       (Text)
 import qualified Database.Persist.Postgresql          as DB
 import           Network.Wai                          (Middleware)
@@ -95,6 +96,10 @@ getConfig = do
 getSecret :: IO JWT.Secret
 getSecret = JWT.binarySecret . maybe defaultSecret BS.pack <$> lookupEnv "TALK_COMPOSE_ENV"
   where defaultSecret = "CHANGE_ME_IN_PRODUCTION"
+
+getAppRoot :: IO T.Text
+getAppRoot = maybe defaultRoot T.pack <$> lookupEnv "TALK_COMPOSE_ROOT"
+  where defaultRoot = "http://localhost:3000"
 
 application :: Environment -> ScottyT Error ConfigM () -> ScottyT Error ConfigM ()
 application e app = do

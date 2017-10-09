@@ -113,6 +113,7 @@ main :: IO ()
 main = do
     manager <- newManager tlsManagerSettings
     secret <- getSecret
+    appRoot <- getAppRoot
     runService $ do
         get "/" $ do
             -- Select only composes updated in the last 10 days.
@@ -135,7 +136,7 @@ main = do
                          , ("openid.ns.sreg", "http://openid.net/extensions/sreg/1.1")
                          ]
             url <- lift $ getForwardUrl "https://id.fedoraproject.org/openid"
-                                        "http://localhost:3000/login-finished"
+                                        (appRoot <> "/login-finished")
                                         Nothing fields manager
             redirect (fromStrict url)
 
@@ -146,7 +147,7 @@ main = do
                 Nothing -> liftIO $ print "No nickname"
                 Just nickname -> do
                     let token = JWT.encodeSigned JWT.HS256 secret JWT.def
-                                             { JWT.iss = JWT.stringOrURI "http://localhost:3000/"
+                                             { JWT.iss = JWT.stringOrURI appRoot
                                              , JWT.sub = JWT.stringOrURI nickname
                                              , JWT.exp = JWT.numericDate 7200
                                              }

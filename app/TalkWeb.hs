@@ -29,12 +29,12 @@ import WebService
 
 import           Paths_talk_compose (version)
 
-defaultTemplate :: Maybe JWT.StringOrURI -> Html a -> Html ()
-defaultTemplate muser content = doctypehtml_ $ do
+defaultTemplate :: Maybe Text -> Maybe JWT.StringOrURI -> Html a -> Html ()
+defaultTemplate mtitle muser content = doctypehtml_ $ do
     head_ $ do
         meta_ [charset_ "utf-8"]
         link_ [href_ "/static/style.css", rel_ "stylesheet"]
-        title_ "Talk Compose"
+        title_ (titleText <> "Talk Compose")
     body_ $ do
         div_ [class_ "header"] $ do
             h1_ (a_ [href_ "/"] "Talk Compose")
@@ -45,6 +45,8 @@ defaultTemplate muser content = doctypehtml_ $ do
                 a_ [href_ "https://github.com/lubomir/talk-compose"] $ do
                     "Talk Compose "
                     toHtml $ showVersion version
+  where
+    titleText = maybe "" ((<> " – ") . toHtml) mtitle
 
 userBlock :: Maybe JWT.StringOrURI -> Html ()
 userBlock Nothing = a_ [href_ "/login"] "Log in"
@@ -52,11 +54,11 @@ userBlock (Just user) = do
     strong_ (toHtml (show user))
     a_ [href_ "/logout"] "Log out"
 
-template :: Html a -> Action
-template content = do
+template :: Maybe Text -> Html a -> Action
+template mtitle content = do
     setHeader "Content-Type" "text/html"
     muser <- optionalUser
-    text . renderText . defaultTemplate muser $ content
+    text . renderText . defaultTemplate mtitle muser $ content
 
 formatType :: Compose -> Html ()
 formatType Compose{..}
@@ -126,7 +128,8 @@ main = do
                                               , DB.Asc ComposeType
                                               , DB.Desc ComposeRespin
                                               ]
-            template $ mconcat
+            template Nothing
+                     $ mconcat
                      $ map (composeRow . unzip)
                      $ groupBy (\x y -> fst x == fst y)
                      $ map ((\x -> ((composeRelease x, composeVersion x), x)) . DB.entityVal) composes
@@ -181,7 +184,7 @@ main = do
             cid <- param "id"
             mcompose <- runDB $ DB.selectList [ComposeComposeId DB.==. cid] []
             case mcompose of
-                [DB.Entity _ compose] -> template $ composePage compose
+                [DB.Entity _ compose] -> template (Just cid) $ composePage compose
                 _ -> next
 
         get "/static/style.css" $ do

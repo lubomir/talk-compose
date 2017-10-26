@@ -8,6 +8,7 @@ import           Control.Monad.Trans.Class   (lift)
 import qualified Data.ByteString.Lazy        as LBS
 import           Data.Functor.Identity
 import           Data.List
+import           Data.Maybe                  (isJust)
 import           Data.Monoid                 ((<>))
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
@@ -98,11 +99,11 @@ getRelease Compose{..} =
     let (prefix, date) = T.breakOnEnd "-" composeComposeId
     in T.dropEnd 1 prefix
 
-composePage :: Compose -> Html ()
-composePage c@Compose{..} = do
+composePage :: Bool -> Compose -> Html ()
+composePage withRefresh c@Compose{..} = do
     h2_ [class_ composeStatus] $ toHtml composeComposeId <> formatStatus c
     ul_ $ do
-        when (composeStatus == "STARTED") $
+        when (composeStatus == "STARTED" && withRefresh) $
             li_ $ a_ [href_ $ "/refresh/" <> composeComposeId] "Refresh status"
         li_ $ a_ [href_ composeLocation] "View data"
         li_ $ a_ [href_ $ composeLocation <> "/../logs/global/pungi.global.log"] "View main log"
@@ -184,9 +185,10 @@ main = do
 
         get "/:id" $ do
             cid <- param "id"
+            muser <- optionalUser
             mcompose <- runDB $ DB.selectList [ComposeComposeId DB.==. cid] []
             case mcompose of
-                [DB.Entity _ compose] -> template (Just cid) $ composePage compose
+                [DB.Entity _ compose] -> template (Just cid) $ composePage (isJust muser) compose
                 _ -> next
 
         get "/static/style.css" $ do

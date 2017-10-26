@@ -108,8 +108,10 @@ composePage c@Compose{..} = do
         li_ $ a_ [href_ $ composeLocation <> "/../logs/global/pungi.global.log"] "View main log"
         li_ $ "First heard of: " <> toHtml (fmtTime composeCreatedOn)
         li_ $ "Last heard of: " <> toHtml (fmtTime composeModifiedOn)
+        {-
     h2_ "Comments"
     p_ "To be done"
+    -}
 
 main :: IO ()
 main = do

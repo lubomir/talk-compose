@@ -25,6 +25,7 @@ import qualified Web.JWT                     as JWT
 import           Web.Scotty.Cookie
 import           Web.Scotty.Trans
 
+import LogParser
 import Model
 import WebService
 
@@ -109,6 +110,8 @@ composePage withRefresh c@Compose{..} = do
         li_ $ a_ [href_ $ getMainLogUrl c] "View main log"
         li_ $ "First heard of: " <> toHtml (fmtTime composeCreatedOn)
         li_ $ "Last heard of: " <> toHtml (fmtTime composeModifiedOn)
+        li_ $ "Hostname: " <> code_ (toHtml composeHostname)
+        li_ $ "Pungi version: " <> code_ (toHtml composePungiVersion)
         {-
     h2_ "Comments"
     p_ "To be done"
@@ -176,10 +179,14 @@ main = do
                         request <- parseRequest $ T.unpack url
                         response <- httpLbs request manager
                         return $ T.strip $ decodeUtf8 $ LBS.toStrict $ responseBody response
+
+                    log <- liftIO $ downloadMainLog manager compose
+                    let updates = [f DB.=. v | (f, v) <- getUpdates log]
+
                     -- TODO get time from Last-Modified header
                     now <- liftIO getCurrentTime
-                    runDB $ DB.upsert compose [ ComposeStatus DB.=. status
-                                              , ComposeModifiedOn DB.=. now]
+                    runDB $ DB.upsert compose
+                            ([ ComposeStatus DB.=. status, ComposeModifiedOn DB.=. now] ++ updates)
                     redirect $ "/" <> fromStrict composeComposeId
                 _ -> next
 

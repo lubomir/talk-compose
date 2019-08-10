@@ -19,6 +19,7 @@ library
                      , Lib
                      , WebService
                      , Model
+                     , LogParser
   build-depends:       base >= 4.7 && < 5
                      , zeromq4-haskell
                      , bytestring
@@ -42,6 +43,8 @@ library
                      , scotty-cookie
                      , wai
                      , wai-extra
+                     , http-client
+                     , http-client-tls
   default-language:    Haskell2010
 
 executable talk-compose-consumer

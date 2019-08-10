@@ -23,16 +23,18 @@ import           Database.Persist.TH
 
 share [mkMigrate "migrateAll", mkPersist sqlSettings] [persistLowerCase|
 Compose
-    composeId  Text
-    location    Text
-    status      Text
-    release     Text
-    version     Text
-    date        Text
-    type        Text
-    respin      Int
-    createdOn   UTCTime         default=now()
-    modifiedOn  UTCTime         default=now()
+    composeId       Text
+    location        Text
+    status          Text
+    release         Text
+    version         Text
+    date            Text
+    type            Text
+    respin          Int
+    pungiVersion    Text            default=''
+    hostname        Text            default=''
+    createdOn       UTCTime         default=now()
+    modifiedOn      UTCTime         default=now()
     UniqueCompose composeId
     deriving Show
 |]
@@ -67,4 +69,10 @@ parseComposeId cid = case T.splitOn "-" (T.reverse cid) of
 
 
 getMainLogUrl :: Compose -> Text
-getMainLogUrl c@Compose{..} = composeLocation <> "/../logs/global/pungi.global.log"
+getMainLogUrl c = composeLocation c <> "/../logs/global/pungi.global.log"
+
+setHostname :: T.Text -> Compose -> Compose
+setHostname hostname c = c { composeHostname = hostname }
+
+setPungiVersion :: T.Text -> Compose -> Compose
+setPungiVersion ver c = c { composePungiVersion = ver }

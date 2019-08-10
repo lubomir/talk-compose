@@ -91,7 +91,7 @@ extractCompose now (Object msg) = do
     location <- HM.lookup "location" msg >>= asText
     status <- HM.lookup "status" msg >>= asText
     let (release, version, date, typ, respin) = parseComposeId composeId
-    return $ Compose composeId location status release version date typ respin now now
+    return $ Compose composeId location status release version date typ respin "" "" now now
 extractCompose _ _ = Nothing
 
 consume :: DB.ConnectionPool -> MessageHandler

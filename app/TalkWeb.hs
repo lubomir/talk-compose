@@ -106,7 +106,7 @@ composePage withRefresh c@Compose{..} = do
         when (composeStatus == "STARTED" && withRefresh) $
             li_ $ a_ [href_ $ "/refresh/" <> composeComposeId] "Refresh status"
         li_ $ a_ [href_ composeLocation] "View data"
-        li_ $ a_ [href_ $ composeLocation <> "/../logs/global/pungi.global.log"] "View main log"
+        li_ $ a_ [href_ $ getMainLogUrl c] "View main log"
         li_ $ "First heard of: " <> toHtml (fmtTime composeCreatedOn)
         li_ $ "Last heard of: " <> toHtml (fmtTime composeModifiedOn)
         {-

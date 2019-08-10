@@ -17,6 +17,7 @@ import           Data.Text      (Text, pack, unpack)
 import qualified Data.Text as T
 import           Data.Time
 import           Text.Printf
+import           Data.Monoid    ((<>))
 
 import           Database.Persist.TH
 
@@ -63,3 +64,7 @@ parseComposeId cid = case T.splitOn "-" (T.reverse cid) of
             respin = read $ unpack $ T.reverse r'
         in (release, T.reverse version, date, if T.null typ then "" else T.tail typ, respin)
     _ -> ("", "", "", "", 0)
+
+
+getMainLogUrl :: Compose -> Text
+getMainLogUrl c@Compose{..} = composeLocation <> "/../logs/global/pungi.global.log"

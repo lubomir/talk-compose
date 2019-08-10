@@ -7,19 +7,24 @@ import           Control.Monad               (forever, void)
 import           Data.Aeson
 import qualified Data.ByteString             as BS
 -- import qualified Data.ByteString.Lazy        as BSL
+import           Control.Concurrent.Async    (race_)
+import           Control.Concurrent.STM
 import qualified Data.HashMap.Lazy           as HM
 import qualified Data.Text                   as T
 import           Data.Time
 import           Data.Time.Clock.POSIX
 import           Database.Persist            ((=.))
 import qualified Database.Persist.Postgresql as DB
-import           System.ZMQ4                 (Context, Receiver, Socket, Sub(..),
-                                              Subscriber, connect, receive,
-                                              subscribe, withContext,
+import           Network.HTTP.Client
+import           Network.HTTP.Client.TLS
+import           System.ZMQ4                 (Context, Receiver, Socket,
+                                              Sub (..), Subscriber, connect,
+                                              receive, subscribe, withContext,
                                               withSocket)
 
 import Model
 import Lib
+import LogParser
 
 type Topic = BS.ByteString
 type MessageHandler = (Topic -> Message -> IO ())
@@ -94,21 +99,22 @@ extractCompose now (Object msg) = do
     return $ Compose composeId location status release version date typ respin "" "" now now
 extractCompose _ _ = Nothing
 
-consume :: DB.ConnectionPool -> MessageHandler
-consume pool _ msg = do
+consume :: DB.ConnectionPool -> TQueue Compose -> MessageHandler
+consume pool queue _ msg = do
     now <- getCurrentTime
     case extractCompose now (msgMsg msg) of
         Nothing -> putStrLn $ "Failed to process message: " ++ show msg
-        Just compose ->
+        Just compose -> do
+          atomically $ writeTQueue queue compose
           void $ runDB pool $ DB.upsert compose [ ComposeStatus =. composeStatus compose
                                                 , ComposeModifiedOn =. now]
 
-connectSocket :: DB.ConnectionPool -> String -> [Topic] -> Context -> IO ()
-connectSocket pool endpoint topics context = withSocket context Sub $ \subscriber -> do
+connectSocket :: DB.ConnectionPool -> TQueue Compose -> String -> [Topic] -> Context -> IO ()
+connectSocket pool queue endpoint topics context = withSocket context Sub $ \subscriber -> do
     putStrLn $ "Connecting to " ++ endpoint
     connect subscriber endpoint
     subscribeTopics topics subscriber
-    ingestMessages subscriber (consume pool)
+    ingestMessages subscriber (consume pool queue)
 
 runDB :: DB.ConnectionPool -> DB.SqlPersistT IO a -> IO a
 runDB pool q = DB.runSqlPool q pool
@@ -120,11 +126,35 @@ withDB worker = do
     runDB pool $ DB.runMigration migrateAll
     worker pool
 
-runConsumer :: IO ()
-runConsumer = do
-    putStrLn "Connecting to database..."
+
+
+consumerThread :: TQueue Compose -> IO ()
+consumerThread queue = do
+    putStrLn "Consumer is connecting to database..."
     withDB $ \ pool -> do
         putStrLn "Connecting to ZMQ..."
         withContext $ connectSocket pool
+                                    queue
                                     "tcp://hub.fedoraproject.org:9940"
                                     ["org.fedoraproject.prod.pungi.compose.status.change"]
+
+updaterThread :: TQueue Compose -> IO ()
+updaterThread queue = do
+    putStrLn "Updater is connecting to database..."
+    withDB $ \ pool -> do
+        putStrLn "Starting worker thread..."
+        manager <- newManager tlsManagerSettings
+        logProcessor manager pool
+  where
+    logProcessor :: Manager -> DB.ConnectionPool -> IO ()
+    logProcessor manager pool = forever $ do
+        compose <- atomically $ readTQueue queue
+        putStrLn $ "Updating compose " ++ show (composeComposeId compose)
+        log <- downloadMainLog manager compose
+        let updates = [f DB.=. v | (f, v) <- getUpdates log]
+        runDB pool $ DB.upsert compose updates
+
+runConsumer :: IO ()
+runConsumer = do
+    queue <- atomically newTQueue
+    race_ (consumerThread queue) (updaterThread queue)

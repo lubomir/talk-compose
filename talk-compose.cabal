@@ -45,6 +45,8 @@ library
                      , wai-extra
                      , http-client
                      , http-client-tls
+                     , stm
+                     , async
   default-language:    Haskell2010
 
 executable talk-compose-consumer

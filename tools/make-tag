@@ -6,6 +6,9 @@ pos=3
 if [ $# -eq 1 ] && [ "$1" = "--major" ]; then
     pos=2
 fi
+if [ $# -eq 1 ] && [ "$1" = "--patch" ]; then
+    pos=4
+fi
 cmd=$(printf '{$%s=$%s+1' "$pos" "$pos")
 for i in $(seq $((pos + 1)) 4); do
     cmd=$(printf "%s;$%s=0" "$cmd" "$i")

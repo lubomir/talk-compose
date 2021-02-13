@@ -57,3 +57,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: tarball.tar.xz
           asset_name: ${{ steps.vars.outputs.tarball }}
+          asset_content_type: application/x-tar

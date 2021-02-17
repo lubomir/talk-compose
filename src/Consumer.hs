@@ -150,9 +150,12 @@ updaterThread queue = do
     logProcessor manager pool = forever $ do
         compose <- atomically $ readTQueue queue
         putStrLn $ "Updating compose " ++ show (composeComposeId compose)
-        log <- downloadMainLog manager compose
-        let updates = [f DB.=. v | (f, v) <- getUpdates log]
-        runDB pool $ DB.upsert compose updates
+        case getMainLogUrl compose of
+            Nothing -> putStrLn $ "Invalid URL. Skipping..."
+            Just url -> do
+                log <- downloadMainLog manager url
+                let updates = [f DB.=. v | (f, v) <- getUpdates log]
+                void $ runDB pool $ DB.upsert compose updates
 
 runConsumer :: IO ()
 runConsumer = do

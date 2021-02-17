@@ -8,7 +8,7 @@ import           Control.Monad.Trans.Class   (lift)
 import qualified Data.ByteString.Lazy        as LBS
 import           Data.Functor.Identity
 import           Data.List
-import           Data.Maybe                  (isJust)
+import           Data.Maybe                  (isJust, fromJust)
 import           Data.Monoid                 ((<>))
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
@@ -104,10 +104,11 @@ composePage :: Bool -> Compose -> Html ()
 composePage withRefresh c@Compose{..} = do
     h2_ [class_ composeStatus] $ toHtml composeComposeId <> formatStatus c
     ul_ $ do
-        when (composeStatus == "STARTED" && withRefresh) $
+        when (composeStatus == "STARTED" && withRefresh && isValidUrl composeLocation) $
             li_ $ a_ [href_ $ "/refresh/" <> composeComposeId] "Refresh status"
-        li_ $ a_ [href_ composeLocation] "View data"
-        li_ $ a_ [href_ $ getMainLogUrl c] "View main log"
+        when (isValidUrl composeLocation) $ do
+            li_ $ a_ [href_ composeLocation] "View data"
+            li_ $ a_ [href_ $ fromJust $ getMainLogUrl c] "View main log"
         li_ $ "First heard of: " <> toHtml (fmtTime composeCreatedOn)
         li_ $ "Last heard of: " <> toHtml (fmtTime composeModifiedOn)
         li_ $ "Hostname: " <> code_ (toHtml composeHostname)
@@ -174,13 +175,15 @@ main = do
                                               []
             case mcompose of
                 [DB.Entity _ compose@Compose{..}] -> do
+                    when (not $ isValidUrl composeLocation) $ next
                     let url = composeLocation <> "/../STATUS"
                     status <- liftIO $ do
                         request <- parseRequest $ T.unpack url
                         response <- httpLbs request manager
                         return $ T.strip $ decodeUtf8 $ LBS.toStrict $ responseBody response
 
-                    log <- liftIO $ downloadMainLog manager compose
+                    let url = fromJust $ getMainLogUrl compose
+                    log <- liftIO $ downloadMainLog manager url
                     let updates = [f DB.=. v | (f, v) <- getUpdates log]
 
                     -- TODO get time from Last-Modified header

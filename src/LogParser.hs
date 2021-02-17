@@ -11,13 +11,11 @@ import Model
 
 type Matcher = T.Text -> Maybe T.Text
 
-downloadMainLog :: Manager -> Compose -> IO T.Text
-downloadMainLog manager c =
-    let url = getMainLogUrl c
-    in do
-        request <- parseRequest $ T.unpack url
-        response <- httpLbs request manager
-        return $ T.strip $ decodeUtf8 $ LBS.toStrict $ responseBody response
+downloadMainLog :: Manager -> T.Text -> IO T.Text
+downloadMainLog manager url = do
+    request <- parseRequest $ T.unpack url
+    response <- httpLbs request manager
+    return $ T.strip $ decodeUtf8 $ LBS.toStrict $ responseBody response
 
 extractValue :: T.Text -> T.Text -> Maybe T.Text
 extractValue needle line =

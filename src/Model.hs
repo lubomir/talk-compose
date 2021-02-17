@@ -68,8 +68,15 @@ parseComposeId cid = case T.splitOn "-" (T.reverse cid) of
     _ -> ("", "", "", "", 0)
 
 
-getMainLogUrl :: Compose -> Text
-getMainLogUrl c = composeLocation c <> "/../logs/global/pungi.global.log"
+isValidUrl :: T.Text -> Bool
+isValidUrl url = "http://" `T.isPrefixOf` url || "https://" `T.isPrefixOf` url
+
+getMainLogUrl :: Compose -> Maybe Text
+getMainLogUrl c =
+    let location = composeLocation c
+    in if isValidUrl location
+        then Just $ composeLocation c <> "/../logs/global/pungi.global.log"
+        else Nothing
 
 setHostname :: T.Text -> Compose -> Compose
 setHostname hostname c = c { composeHostname = hostname }
